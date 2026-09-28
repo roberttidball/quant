@@ -21,11 +21,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FxMacroDataClient {
     private static final String DEFAULT_BASE_URL = "https://api.fxmacrodata.com/v1/";
     private static final String API_KEY_HEADER = "X-API-Key";
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final CloseableHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -73,6 +75,10 @@ public class FxMacroDataClient {
         return get("announcements/" + currency + "/" + indicator, Collections.emptyMap());
     }
 
+    public Observable<JsonNode> announcements(String currency, String indicator, int limit, int offset) {
+        return get("announcements/" + currency + "/" + indicator, page(limit, offset));
+    }
+
     public Observable<JsonNode> latestAnnouncements(String currency) {
         return get("announcements/" + currency + "/latest", Collections.emptyMap());
     }
@@ -89,6 +95,10 @@ public class FxMacroDataClient {
         return get("predictions/" + currency + "/" + indicator, Collections.emptyMap());
     }
 
+    public Observable<JsonNode> predictions(String currency, String indicator, int limit, int offset) {
+        return get("predictions/" + currency + "/" + indicator, page(limit, offset));
+    }
+
     public Observable<JsonNode> forex(String base, String quote) {
         return get("forex/" + base + "/" + quote, Collections.emptyMap());
     }
@@ -99,12 +109,24 @@ public class FxMacroDataClient {
         return get("forex/" + base + "/" + quote, query);
     }
 
+    public Observable<JsonNode> forex(String base, String quote, int limit, int offset) {
+        return get("forex/" + base + "/" + quote, page(limit, offset));
+    }
+
     public Observable<JsonNode> cot(String currency) {
         return get("cot/" + currency, Collections.emptyMap());
     }
 
+    public Observable<JsonNode> cot(String currency, int limit, int offset) {
+        return get("cot/" + currency, page(limit, offset));
+    }
+
     public Observable<JsonNode> commodity(String indicator) {
         return get("commodities/" + indicator, Collections.emptyMap());
+    }
+
+    public Observable<JsonNode> commodity(String indicator, int limit, int offset) {
+        return get("commodities/" + indicator, page(limit, offset));
     }
 
     public Observable<JsonNode> commoditiesLatest() {
@@ -127,6 +149,10 @@ public class FxMacroDataClient {
         return get("rate_differentials/" + base + "/" + quote, Collections.emptyMap());
     }
 
+    public Observable<JsonNode> rateDifferentials(String base, String quote, int limit, int offset) {
+        return get("rate_differentials/" + base + "/" + quote, page(limit, offset));
+    }
+
     public Observable<JsonNode> forwardDifferentials(String base, String quote) {
         return get("forward_differentials/" + base + "/" + quote, Collections.emptyMap());
     }
@@ -145,6 +171,10 @@ public class FxMacroDataClient {
 
     public Observable<JsonNode> pressReleases(String currency) {
         return get("press-releases/" + currency, Collections.emptyMap());
+    }
+
+    public Observable<JsonNode> pressReleases(String currency, int limit, int offset) {
+        return get("press-releases/" + currency, page(limit, offset));
     }
 
     public Observable<JsonNode> graphQl(String query, JsonNode variables) {
@@ -202,6 +232,24 @@ public class FxMacroDataClient {
             throw new IOException("FXMacroData HTTP " + statusCode + ": " + body);
         }
         return objectMapper.readTree(body);
+    }
+
+    /**
+     * List endpoints return 20 rows by default and at most 100 per request, newest first.
+     * Request the next page with the response's pagination.next_offset while
+     * pagination.has_more is true.
+     */
+    static Map<String, String> page(int limit, int offset) {
+        if (limit < 1 || limit > MAX_PAGE_SIZE) {
+            throw new IllegalArgumentException("limit must be between 1 and " + MAX_PAGE_SIZE + ".");
+        }
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset must not be negative.");
+        }
+        Map<String, String> query = new LinkedHashMap<>();
+        query.put("limit", String.valueOf(limit));
+        query.put("offset", String.valueOf(offset));
+        return query;
     }
 
     private static String normalizeBaseUrl(String baseUrl) {

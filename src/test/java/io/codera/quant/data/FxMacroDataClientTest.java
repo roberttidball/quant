@@ -28,6 +28,24 @@ public class FxMacroDataClientTest {
     }
 
     @Test
+    public void buildsPagedUriWithLimitAndOffset() throws Exception {
+        FxMacroDataClient client = new FxMacroDataClient(
+                "test-key",
+                "https://example.com/v1/",
+                null,
+                null);
+
+        URI uri = client.buildUri("forex/eur/usd", FxMacroDataClient.page(100, 200));
+
+        assertEquals("https://example.com/v1/forex/eur/usd?limit=100&offset=200", uri.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsLimitAboveApiMaximum() {
+        FxMacroDataClient.page(101, 0);
+    }
+
+    @Test
     public void buildsFullEndpointSurfaceUnderV1() throws Exception {
         FxMacroDataClient client = new FxMacroDataClient(
                 "test-key",
