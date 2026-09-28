@@ -8,14 +8,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class FxMacroDataClientTest {
     @Test
-    public void buildsForexUriWithApiKeyAndQuery() throws Exception {
+    public void buildsForexUriWithQueryAndNoApiKey() throws Exception {
         FxMacroDataClient client = new FxMacroDataClient(
                 "test-key",
-                "https://example.com/api/v1/",
+                "https://example.com/v1/",
                 null,
                 null);
 
@@ -23,14 +24,14 @@ public class FxMacroDataClientTest {
         query.put("limit", "1");
         URI uri = client.buildUri("forex/eur/usd", query);
 
-        assertEquals("https://example.com/api/v1/forex/eur/usd?limit=1&api_key=test-key", uri.toString());
+        assertEquals("https://example.com/v1/forex/eur/usd?limit=1", uri.toString());
     }
 
     @Test
-    public void buildsFullEndpointSurfaceUnderApiV1() throws Exception {
+    public void buildsFullEndpointSurfaceUnderV1() throws Exception {
         FxMacroDataClient client = new FxMacroDataClient(
                 "test-key",
-                "https://example.com/api/v1/",
+                "https://example.com/v1/",
                 null,
                 null);
 
@@ -59,8 +60,8 @@ public class FxMacroDataClientTest {
 
         for (String path : paths) {
             URI uri = client.buildUri(path, Collections.emptyMap());
-            assertTrue(uri.toString().startsWith("https://example.com/api/v1/"));
-            assertTrue(uri.getQuery().contains("api_key=test-key"));
+            assertTrue(uri.toString().startsWith("https://example.com/v1/"));
+            assertNull(uri.getQuery());
         }
     }
 }

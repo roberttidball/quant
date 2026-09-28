@@ -24,7 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class FxMacroDataClient {
-    private static final String DEFAULT_BASE_URL = "https://fxmacrodata.com/api/v1/";
+    private static final String DEFAULT_BASE_URL = "https://api.fxmacrodata.com/v1/";
+    private static final String API_KEY_HEADER = "X-API-Key";
 
     private final CloseableHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -150,6 +151,7 @@ public class FxMacroDataClient {
         return Observable.<JsonNode>create(subscriber -> {
             try {
                 HttpPost post = new HttpPost(buildUri("graphql", Collections.emptyMap()));
+                post.setHeader(API_KEY_HEADER, apiKey);
                 Map<String, Object> body = new HashMap<>();
                 body.put("query", query);
                 if (variables != null) {
@@ -176,7 +178,6 @@ public class FxMacroDataClient {
                 }
             }
         }
-        builder.addParameter("api_key", apiKey);
         return builder.build();
     }
 
@@ -184,6 +185,7 @@ public class FxMacroDataClient {
         return Observable.<JsonNode>create(subscriber -> {
             try {
                 HttpGet get = new HttpGet(buildUri(path, query));
+                get.setHeader(API_KEY_HEADER, apiKey);
                 subscriber.onNext(parseResponse(httpClient.execute(get)));
                 subscriber.onCompleted();
             } catch (Exception e) {
