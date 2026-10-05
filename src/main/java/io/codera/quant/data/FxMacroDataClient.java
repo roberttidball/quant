@@ -35,7 +35,7 @@ public class FxMacroDataClient {
     private final String baseUrl;
 
     public FxMacroDataClient(String apiKey) {
-        this(apiKey, DEFAULT_BASE_URL, HttpClients.createDefault(), new ObjectMapper());
+        this(apiKey, DEFAULT_BASE_URL, defaultHttpClient(), new ObjectMapper());
     }
 
     public FxMacroDataClient(
@@ -48,7 +48,7 @@ public class FxMacroDataClient {
         }
         this.apiKey = apiKey;
         this.baseUrl = normalizeBaseUrl(baseUrl);
-        this.httpClient = httpClient == null ? HttpClients.createDefault() : httpClient;
+        this.httpClient = httpClient == null ? defaultHttpClient() : httpClient;
         this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
     }
 
@@ -250,6 +250,14 @@ public class FxMacroDataClient {
         query.put("limit", String.valueOf(limit));
         query.put("offset", String.valueOf(offset));
         return query;
+    }
+
+    /**
+     * Redirects are not followed, so the API key header is never sent to another host;
+     * a 3xx response is reported as an error by parseResponse.
+     */
+    private static CloseableHttpClient defaultHttpClient() {
+        return HttpClients.custom().disableRedirectHandling().build();
     }
 
     private static String normalizeBaseUrl(String baseUrl) {
